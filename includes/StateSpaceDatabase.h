@@ -60,3 +60,21 @@ ob::StateSpacePtr createBounded2ndOrderCarStateSpace(const unsigned int x_max, c
 
     return space;
 }
+
+ob::StateSpacePtr createBicycleStateSpace(const unsigned int x_max, const unsigned int y_max)
+{
+    ob::StateSpacePtr space = std::make_shared<ob::CompoundStateSpace>();
+    space->as<ob::CompoundStateSpace>()->addSubspace(ob::StateSpacePtr(new ob::RealVectorStateSpace(2)), 1.0);
+    space->as<ob::CompoundStateSpace>()->addSubspace(ob::StateSpacePtr(new ob::SO2StateSpace()), 1.0);
+    space->as<ob::CompoundStateSpace>()->lock();
+    
+    // set the bounds for the RealVectorStateSpace 
+    ob::RealVectorBounds bounds(2);
+    bounds.setLow(0, 0); //  x lower bound
+    bounds.setHigh(0, x_max); // x upper bound
+    bounds.setLow(1, 0);  // y lower bound
+    bounds.setHigh(1, y_max); // y upper bound
+    space->as<ob::CompoundStateSpace>()->as<ob::RealVectorStateSpace>(0)->setBounds(bounds);
+
+    return space;
+}

@@ -36,6 +36,7 @@
 
 #include <ompl/control/ODESolver.h>
 #include <ompl/base/spaces/SO2StateSpace.h>
+#include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 
 namespace ob = ompl::base;
@@ -73,3 +74,36 @@ void SecondOrderCarODEPostIntegration (const ob::State* /*state*/, const oc::Con
     SO2.enforceBounds(angleState1);
 }
 
+void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* control, oc::ODESolver::StateType& qdot)
+{
+    // q = x, y, theta, v
+    // c = delta, a (steering angle, acceleration)
+    const double *u = control->as<oc::RealVectorControlSpace::ControlType>()->values;
+    const double velocity = u[0];
+    const double steeringAngle = u[1];
+
+    // state parameters
+    const double theta = q[2];
+    
+    //TODO: don't hardcode the next two values
+    const double l_f = .5; // Distance between the front axle and the center of gravity
+    const double l_r = .5; // Distance between the rear axle and the center of gravity
+    const double beta = atan(tan(steeringAngle) * l_r / (l_f + l_r));
+
+    // Zero out qdot
+    qdot.resize(q.size(), 0);
+
+    // vehicle model (kinematic bicycle model)
+    qdot[0] = velocity * cos(theta + beta);
+    qdot[1] = velocity * sin(theta + beta);
+    qdot[2] = velocity / (l_f + l_r) * sin(beta);  // Steering angle: u[0]
+}
+
+void bicyclePostPropagate(const ob::State* state, const oc::Control* control, const double duration, ob::State* result)
+{
+    ob::SO2StateSpace SO2;
+ 
+    // Ensure that the bicycle's resulting orientation lies between 0 and 2*pi.
+    ob::SE2StateSpace::StateType& s = *result->as<ob::SE2StateSpace::StateType>();
+    SO2.enforceBounds(s[1]);
+}
