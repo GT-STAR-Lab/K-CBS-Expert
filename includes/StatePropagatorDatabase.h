@@ -54,7 +54,7 @@ void SecondOrderCarODE (const oc::ODESolver::StateType& q, const oc::Control* co
     const double carLength = 0.5;
 
     // Zero out qdot
-    qdot.resize (q.size (), 0);
+    qdot.resize (q.size(), 0);
  
     // vehicle model
     qdot[0] = v * cos(theta);
@@ -77,36 +77,25 @@ void SecondOrderCarODEPostIntegration (const ob::State* /*state*/, const oc::Con
 void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* control, oc::ODESolver::StateType& qdot)
 {
     // q = x, y, v, phi, theta
-    // c = delta, a (steering angle, acceleration)
+    // c = acceleration, steering angle
     const double *u = control->as<oc::RealVectorControlSpace::ControlType>()->values;
-    const double acceleration = u[0];
-    const double steeringAngle = u[1];
 
     // state parameters
     const double velocity = q[2];
-    const double theta = q[3];
+    const double theta = q[4];
     
     //TODO: don't hardcode the next two values
-    const double l_f = .5; // Distance between the front axle and the center of gravity
-    const double l_r = .5; // Distance between the rear axle and the center of gravity
-    const double beta = atan(tan(steeringAngle) * l_r / (l_f + l_r));
+    const double l_f = 0.5; // Distance between the front axle and the center of gravity
+    const double l_r = 0.5; // Distance between the rear axle and the center of gravity
+    const double beta = atan(tan(u[1]) * l_r / (l_f + l_r));
 
     // Zero out qdot
     qdot.resize(q.size(), 0);
 
     // vehicle model (kinematic bicycle model)
-    qdot[0] = velocity * cos(theta + beta) * .3;
-    qdot[1] = velocity * sin(theta + beta) * .3;
-    qdot[2] = acceleration;
-    qdot[3] = steeringAngle;
-    qdot[4] = velocity / (l_f + l_r) * sin(beta) * .3; 
-}
-
-void bicyclePostPropagate(const ob::State* state, const oc::Control* control, const double duration, ob::State* result)
-{
-    ob::SO2StateSpace SO2;
- 
-    // Ensure that the bicycle's resulting orientation lies between 0 and 2*pi.
-    ob::SE2StateSpace::StateType& s = *result->as<ob::SE2StateSpace::StateType>();
-    SO2.enforceBounds(s[1]);
+    qdot[0] = velocity * cos(theta + beta) * 1;
+    qdot[1] = velocity * sin(theta + beta) * 1;
+    qdot[2] = u[0];
+    qdot[3] = u[1];
+    qdot[4] = velocity / (l_f + l_r) * sin(beta) * 1; 
 }

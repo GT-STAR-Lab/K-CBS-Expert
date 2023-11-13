@@ -164,6 +164,7 @@ void plan()
     {
         printf("Found Solution in %0.2f seconds!\n", duration_s);
         omrb::PlanPtr solution = ma_pdef->getSolutionPlan();
+        std::this_thread::sleep_for (std::chrono::milliseconds(1)); //sometimes segfaults without this
         std::ofstream MyFile("plan.txt");
         solution->as<omrc::PlanControl>()->printAsMatrix(MyFile, "Robot");
     }

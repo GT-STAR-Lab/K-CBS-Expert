@@ -115,7 +115,7 @@ void plan()
         si->setStatePropagator(oc::ODESolver::getStatePropagator(odeSolver, &SecondOrderCarODEPostIntegration));
 
         // set the propagation step size
-        si->setPropagationStepSize(0.3);
+        si->setPropagationStepSize(1);
 
         // set this to remove the warning
         si->setMinMaxControlDuration(1, 10);
@@ -124,6 +124,9 @@ void plan()
         ob::ScopedState<> start(space);
         start[0] = start_map.at(itr->first).first;
         start[1] = start_map.at(itr->first).second;
+        start[2] = 0.0;
+        start[3] = 0.0;
+        start[4] = 0.0;
 
         // // create a problem instance
         auto pdef(std::make_shared<ob::ProblemDefinition>(si));
@@ -160,7 +163,7 @@ void plan()
     {
         printf("Found Solution in %0.2f seconds!\n", duration_s);
         omrb::PlanPtr solution = ma_pdef->getSolutionPlan();
-        std::this_thread::sleep_for (std::chrono::milliseconds(1)); //segfaults without this
+        std::this_thread::sleep_for (std::chrono::milliseconds(2)); //sometimes segfaults without this
         std::ofstream MyFile("plan.txt");
         solution->as<omrc::PlanControl>()->printAsMatrix(MyFile, "Robot");
     }
