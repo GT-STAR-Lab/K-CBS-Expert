@@ -94,9 +94,9 @@ void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* c
     qdot.resize(q.size(), 0);
 
     // vehicle model (kinematic bicycle model)
-    qdot[0] = velocity * cos(theta + beta);
-    qdot[1] = velocity * sin(theta + beta);
-    qdot[2] = velocity / (l_f + l_r) * sin(beta);  // Steering angle: u[0]
+    qdot[0] = velocity * cos(theta + beta) * .3;
+    qdot[1] = velocity * sin(theta + beta) * .3;
+    qdot[2] = velocity / (l_f + l_r) * sin(beta) * .3;  // Steering angle: u[0]
 }
 
 void bicyclePostPropagate(const ob::State* state, const oc::Control* control, const double duration, ob::State* result)

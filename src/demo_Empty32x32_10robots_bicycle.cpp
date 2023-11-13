@@ -115,7 +115,7 @@ void plan()
         si->setStatePropagator(oc::ODESolver::getStatePropagator(odeSolver, &SecondOrderCarODEPostIntegration));
 
         // set the propagation step size
-        si->setPropagationStepSize(0.1);
+        si->setPropagationStepSize(0.3);
 
         // set this to remove the warning
         si->setMinMaxControlDuration(1, 10);
