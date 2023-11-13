@@ -76,14 +76,15 @@ void SecondOrderCarODEPostIntegration (const ob::State* /*state*/, const oc::Con
 
 void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* control, oc::ODESolver::StateType& qdot)
 {
-    // q = x, y, theta, v
+    // q = x, y, v, phi, theta
     // c = delta, a (steering angle, acceleration)
     const double *u = control->as<oc::RealVectorControlSpace::ControlType>()->values;
-    const double velocity = u[0];
+    const double acceleration = u[0];
     const double steeringAngle = u[1];
 
     // state parameters
-    const double theta = q[2];
+    const double velocity = q[2];
+    const double theta = q[3];
     
     //TODO: don't hardcode the next two values
     const double l_f = .5; // Distance between the front axle and the center of gravity
@@ -96,7 +97,9 @@ void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* c
     // vehicle model (kinematic bicycle model)
     qdot[0] = velocity * cos(theta + beta) * .3;
     qdot[1] = velocity * sin(theta + beta) * .3;
-    qdot[2] = velocity / (l_f + l_r) * sin(beta) * .3;  // Steering angle: u[0]
+    qdot[2] = acceleration;
+    qdot[3] = steeringAngle;
+    qdot[4] = velocity / (l_f + l_r) * sin(beta) * .3; 
 }
 
 void bicyclePostPropagate(const ob::State* state, const oc::Control* control, const double duration, ob::State* result)

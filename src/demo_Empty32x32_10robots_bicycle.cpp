@@ -96,7 +96,7 @@ void plan()
     for (auto itr = start_map.begin(); itr != start_map.end(); itr++) 
     {
         // construct the state space we are planning in
-        auto space = createBicycleStateSpace(32, 32);
+        auto space = createBounded2ndOrderCarStateSpace(32, 32);
 
         // name the state space parameter
         space->setName(itr->first);
