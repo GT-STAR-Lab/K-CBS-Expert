@@ -46,38 +46,40 @@
 #include <unordered_map>
 #include <math.h>
 #include <chrono>
+#include "rapidxml/rapidxml.hpp"
 
+using namespace rapidxml;
 namespace omrb = ompl::multirobot::base;
 namespace omrc = ompl::multirobot::control;
 namespace ob = ompl::base;
 namespace oc = ompl::control;
 
-void plan()
+void plan(int width, int height, std::unordered_map<std::string, std::pair<int, int>> start_map, std::unordered_map<std::string, std::pair<int, int>> goal_map)
 {
     // provide start and goals for every robot
-    const std::unordered_map<std::string, std::pair<int, int>> start_map{   {"Robot 0", {11, 6}}, 
-                                                                            {"Robot 1", {29, 9}}, 
-                                                                            {"Robot 2", {9, 1}},
-                                                                            {"Robot 3", {11, 16}},
-                                                                            {"Robot 4", {3, 26}},
-                                                                            {"Robot 5", {30, 28}},
-                                                                            {"Robot 6", {2, 12}},
-                                                                            {"Robot 7", {18, 12}},
-                                                                            {"Robot 8", {19, 21}},
-                                                                            {"Robot 9", {10, 22}},
-                                                                        };
+    // const std::unordered_map<std::string, std::pair<int, int>> start_map{   {"Robot 0", {11, 6}}, 
+    //                                                                         {"Robot 1", {29, 9}}, 
+    //                                                                         {"Robot 2", {9, 1}},
+    //                                                                         {"Robot 3", {11, 16}},
+    //                                                                         {"Robot 4", {3, 26}},
+    //                                                                         {"Robot 5", {30, 28}},
+    //                                                                         {"Robot 6", {2, 12}},
+    //                                                                         {"Robot 7", {18, 12}},
+    //                                                                         {"Robot 8", {19, 21}},
+    //                                                                         {"Robot 9", {10, 22}},
+    //                                                                     };
 
-    const std::unordered_map<std::string, std::pair<int, int>> goal_map{    {"Robot 0", {7, 18}}, 
-                                                                            {"Robot 1", {3, 5}}, 
-                                                                            {"Robot 2", {13, 21}},
-                                                                            {"Robot 3", {26, 15}},
-                                                                            {"Robot 4", {24, 26}},
-                                                                            {"Robot 5", {22, 18}},
-                                                                            {"Robot 6", {14, 30}},
-                                                                            {"Robot 7", {27, 3}},
-                                                                            {"Robot 8", {30, 22}},
-                                                                            {"Robot 9", {18, 4}},
-                                                                        };
+    // const std::unordered_map<std::string, std::pair<int, int>> goal_map{    {"Robot 0", {7, 18}}, 
+    //                                                                         {"Robot 1", {3, 5}}, 
+    //                                                                         {"Robot 2", {13, 21}},
+    //                                                                         {"Robot 3", {26, 15}},
+    //                                                                         {"Robot 4", {24, 26}},
+    //                                                                         {"Robot 5", {22, 18}},
+    //                                                                         {"Robot 6", {14, 30}},
+    //                                                                         {"Robot 7", {27, 3}},
+    //                                                                         {"Robot 8", {30, 22}},
+    //                                                                         {"Robot 9", {18, 4}},
+    //                                                                     };
 
 
     // construct all of the robots (assume square robots with unit length)
@@ -96,7 +98,7 @@ void plan()
     for (auto itr = start_map.begin(); itr != start_map.end(); itr++) 
     {
         // construct the state space we are planning in
-        auto space = createBounded2ndOrderCarStateSpace(32, 32);
+        auto space = createBounded2ndOrderCarStateSpace(width, height);
 
         // name the state space parameter
         space->setName(itr->first);
@@ -162,17 +164,87 @@ void plan()
     if (solved)
     {
         printf("Found Solution in %0.2f seconds!\n", duration_s);
+       
         omrb::PlanPtr solution = ma_pdef->getSolutionPlan();
-        std::this_thread::sleep_for (std::chrono::milliseconds(2)); //sometimes segfaults without this
+        std::this_thread::sleep_for (std::chrono::milliseconds(1)); //sometimes segfaults without this
         std::ofstream MyFile("plan.txt");
-        solution->as<omrc::PlanControl>()->printAsMatrix(MyFile, "Robot");
+        //std::cout<<"1"<<std::endl;
+        
+        omrc::PlanControl *planControl = solution->as<omrc::PlanControl>();
+        if(planControl)
+            planControl->printAsMatrix(MyFile, "Robot");
+        else
+            std::cout << "FAILED TO WRITE TO FILE"<<std::endl;
+        MyFile.close();        
     }
     std::ofstream MyFile2("tree.txt");
     planner->printConstraintTree(MyFile2);
+    MyFile2.close();
 }
 
 int main(int argc, char ** argv)
 {
+    if (argc != 2) {
+        std::cout << "Usage: ./program_name <xml_file>\n";
+        return 1;
+    }
+
+    const char* xmlFileName = argv[1];
+
+    // Define variables for width, height, and unordered maps to store start and goal locations
+    int width = 0, height = 0;
+    std::unordered_map<std::string, std::pair<int, int>> startLocations;
+    std::unordered_map<std::string, std::pair<int, int>> goalLocations;
+
+    // Read the XML file
+    std::ifstream file(xmlFileName);
+    if (!file.is_open()) {
+        std::cout << "Unable to open file: " << xmlFileName << "\n";
+        return 1;
+    }
+
+    // Read the content of the file into a string
+    std::string xmlContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    // Parse the XML content
+    xml_document<> doc;
+    doc.parse<0>(&xmlContent[0]);
+
+    // Get the root node
+    xml_node<>* rootNode = doc.first_node("root");
+    if (rootNode == nullptr) {
+        std::cout << "Invalid XML format: Missing root node 'root'\n";
+        return 1;
+    }
+
+    // Extract width and height values
+    xml_node<>* widthNode = rootNode->first_node("width");
+    xml_node<>* heightNode = rootNode->first_node("height");
+
+    if (widthNode && heightNode) {
+        width = std::stoi(widthNode->value());
+        height = std::stoi(heightNode->value());
+    } else {
+        std::cout << "Missing width or height node\n";
+        return 1;
+    }
+
+    // Iterate through each agent node
+    for (xml_node<>* agentNode = rootNode->first_node("agent"); agentNode; agentNode = agentNode->next_sibling("agent")) {
+        xml_attribute<>* startIAttr = agentNode->first_attribute("start_i");
+        xml_attribute<>* startJAttr = agentNode->first_attribute("start_j");
+        xml_attribute<>* goalIAttr = agentNode->first_attribute("goal_i");
+        xml_attribute<>* goalJAttr = agentNode->first_attribute("goal_j");
+
+        if (startIAttr && startJAttr && goalIAttr && goalJAttr) {
+            // Store start and goal locations in unordered maps
+            std::string agentName = "Robot " + std::to_string(startLocations.size() + 1);
+            startLocations[agentName] = std::make_pair(std::stoi(startIAttr->value()), std::stoi(startJAttr->value()));
+            goalLocations[agentName] = std::make_pair(std::stoi(goalIAttr->value()), std::stoi(goalJAttr->value()));
+        }
+    }
+
     std::cout << "Planning for 10 2nd order cars inside an Empty 32x32 workspace with K-CBS." << std::endl;
-    plan();
+    plan(width, height, startLocations, goalLocations);
 }

@@ -93,9 +93,9 @@ void KinematicBicycleODE(const oc::ODESolver::StateType& q, const oc::Control* c
     qdot.resize(q.size(), 0);
 
     // vehicle model (kinematic bicycle model)
-    qdot[0] = velocity * cos(theta + beta) * 1;
-    qdot[1] = velocity * sin(theta + beta) * 1;
+    qdot[0] = velocity * cos(theta + beta);
+    qdot[1] = velocity * sin(theta + beta);
     qdot[2] = u[0];
     qdot[3] = u[1];
-    qdot[4] = velocity / (l_f + l_r) * sin(beta) * 1; 
+    qdot[4] = velocity / (l_f + l_r) * sin(beta); 
 }
