@@ -54,34 +54,8 @@ namespace omrc = ompl::multirobot::control;
 namespace ob = ompl::base;
 namespace oc = ompl::control;
 
-void plan(int width, int height, std::unordered_map<std::string, std::pair<int, int>> start_map, std::unordered_map<std::string, std::pair<int, int>> goal_map)
+void plan(int width, int height, std::unordered_map<std::string, std::pair<int, int>> start_map, std::unordered_map<std::string, std::pair<int, int>> goal_map, char* planFileName)
 {
-    // provide start and goals for every robot
-    // const std::unordered_map<std::string, std::pair<int, int>> start_map{   {"Robot 0", {11, 6}}, 
-    //                                                                         {"Robot 1", {29, 9}}, 
-    //                                                                         {"Robot 2", {9, 1}},
-    //                                                                         {"Robot 3", {11, 16}},
-    //                                                                         {"Robot 4", {3, 26}},
-    //                                                                         {"Robot 5", {30, 28}},
-    //                                                                         {"Robot 6", {2, 12}},
-    //                                                                         {"Robot 7", {18, 12}},
-    //                                                                         {"Robot 8", {19, 21}},
-    //                                                                         {"Robot 9", {10, 22}},
-    //                                                                     };
-
-    // const std::unordered_map<std::string, std::pair<int, int>> goal_map{    {"Robot 0", {7, 18}}, 
-    //                                                                         {"Robot 1", {3, 5}}, 
-    //                                                                         {"Robot 2", {13, 21}},
-    //                                                                         {"Robot 3", {26, 15}},
-    //                                                                         {"Robot 4", {24, 26}},
-    //                                                                         {"Robot 5", {22, 18}},
-    //                                                                         {"Robot 6", {14, 30}},
-    //                                                                         {"Robot 7", {27, 3}},
-    //                                                                         {"Robot 8", {30, 22}},
-    //                                                                         {"Robot 9", {18, 4}},
-    //                                                                     };
-
-
     // construct all of the robots (assume square robots with unit length)
     std::unordered_map<std::string, Robot*> robot_map;
     for (auto itr = start_map.begin(); itr != start_map.end(); itr++)
@@ -150,7 +124,6 @@ void plan(int width, int height, std::unordered_map<std::string, std::pair<int, 
     ma_si->setPlannerAllocator(allocator);
 
     // plan with K-CBS
-    // plan using Kinodynamic Conflict Based Search
     auto planner = std::make_shared<omrc::KCBS>(ma_si);
     planner->setProblemDefinition(ma_pdef); // be sure to set the problem definition
     planner->setLowLevelSolveTime(5.);
@@ -167,8 +140,7 @@ void plan(int width, int height, std::unordered_map<std::string, std::pair<int, 
        
         omrb::PlanPtr solution = ma_pdef->getSolutionPlan();
         std::this_thread::sleep_for (std::chrono::milliseconds(1)); //sometimes segfaults without this
-        std::ofstream MyFile("plan.txt");
-        //std::cout<<"1"<<std::endl;
+        std::ofstream MyFile(planFileName);
         
         omrc::PlanControl *planControl = solution->as<omrc::PlanControl>();
         if(planControl)
@@ -184,8 +156,8 @@ void plan(int width, int height, std::unordered_map<std::string, std::pair<int, 
 
 int main(int argc, char ** argv)
 {
-    if (argc != 2) {
-        std::cout << "Usage: ./program_name <xml_file>\n";
+    if (argc != 3) {
+        std::cout << "Usage: ./program_name <xml_file> <out_path_file>\n";
         return 1;
     }
 
@@ -219,14 +191,14 @@ int main(int argc, char ** argv)
     }
 
     // Extract width and height values
-    xml_node<>* widthNode = rootNode->first_node("width");
-    xml_node<>* heightNode = rootNode->first_node("height");
+    xml_attribute<>* widthAttr = rootNode->first_attribute("width");
+    xml_attribute<>* heightAttr = rootNode->first_attribute("height");
 
-    if (widthNode && heightNode) {
-        width = std::stoi(widthNode->value());
-        height = std::stoi(heightNode->value());
+    if (widthAttr && heightAttr) {
+        width = std::stoi(widthAttr->value());
+        height = std::stoi(heightAttr->value());
     } else {
-        std::cout << "Missing width or height node\n";
+        std::cout << "Missing width or height attribute\n";
         return 1;
     }
 
@@ -245,6 +217,6 @@ int main(int argc, char ** argv)
         }
     }
 
-    std::cout << "Planning for 10 2nd order cars inside an Empty 32x32 workspace with K-CBS." << std::endl;
-    plan(width, height, startLocations, goalLocations);
+    std::cout << "Planning for 10 2nd order cars inside an Empty "<< width << "x" << height <<" workspace with K-CBS." << std::endl;
+    plan(width, height, startLocations, goalLocations, argv[2]);
 }

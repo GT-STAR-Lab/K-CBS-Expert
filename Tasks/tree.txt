@@ -1,0 +1,28 @@
+digraph G {
+"vdFwQV2j
+1
+6
+None";
+"LYbPD9TC
+2
+-1
+{9, [24,24]}";
+"4yipQATP
+-1
+-1
+{0, [24,24]}";
+"vdFwQV2j
+1
+6
+None"->"LYbPD9TC
+2
+-1
+{9, [24,24]}" ;
+"vdFwQV2j
+1
+6
+None"->"4yipQATP
+-1
+-1
+{0, [24,24]}" ;
+}
